@@ -128,8 +128,18 @@ function RootComponent() {
   const router = useRouter();
   const pathname = router.state.location.pathname;
 
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster theme="dark" position="top-right" richColors />
       <div className="relative min-h-screen hero-bg overflow-x-clip">
         {/* Ambient floating gradient shapes */}
         <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
