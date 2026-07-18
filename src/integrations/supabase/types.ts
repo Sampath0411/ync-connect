@@ -14,16 +14,224 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          capacity: number | null
+          category: string | null
+          city: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string | null
+          id: string
+          member_price_cents: number
+          price_cents: number
+          slug: string
+          starts_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          category?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          member_price_cents?: number
+          price_cents?: number
+          slug: string
+          starts_at: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          category?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          member_price_cents?: number
+          price_cents?: number
+          slug?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
+      memberships: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          card_code: string
+          id: string
+          notes: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          card_code?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          card_code?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          created_at: string
+          dob: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string
+          dob?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string
+          dob?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          amount_cents: number
+          checked_in_at: string | null
+          checked_in_by: string | null
+          created_at: string
+          event_id: string
+          id: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          stripe_session_id: string | null
+          ticket_code: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          stripe_session_id?: string | null
+          ticket_code?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          checked_in_at?: string | null
+          checked_in_by?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          stripe_session_id?: string | null
+          ticket_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "team" | "member"
+      event_status: "draft" | "published" | "closed"
+      membership_status: "pending" | "approved" | "rejected"
+      ticket_status: "pending" | "paid" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +358,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "team", "member"],
+      event_status: ["draft", "published", "closed"],
+      membership_status: ["pending", "approved", "rejected"],
+      ticket_status: ["pending", "paid", "cancelled"],
+    },
   },
 } as const
