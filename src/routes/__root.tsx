@@ -80,17 +80,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Join YNC, a premium youth community for events, mentorship, volunteering, and lifelong connections. Free membership for a limited period.",
+          "Join a growing youth movement. Free membership for a limited period, exclusive events, mentorship, and community.",
       },
       { name: "author", content: "YNC" },
       { property: "og:title", content: "YNC — Youth Network Community" },
       {
         property: "og:description",
         content:
-          "A modern youth community platform for events, mentorship and meaningful connections.",
+          "Join a growing youth movement. Free membership for a limited period, exclusive events, mentorship, and community.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "YNC — Youth Network Community" },
+      { name: "twitter:description", content: "Join a growing youth movement. Free membership for a limited period, exclusive events, mentorship, and community." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/17c94aa6-9e34-4258-9c51-b75d1b09b0e5/id-preview-70e28ae6--a049c226-de8d-459c-9b40-b51184a8d138.lovable.app-1784377167817.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/17c94aa6-9e34-4258-9c51-b75d1b09b0e5/id-preview-70e28ae6--a049c226-de8d-459c-9b40-b51184a8d138.lovable.app-1784377167817.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
