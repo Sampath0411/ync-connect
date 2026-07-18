@@ -41,8 +41,8 @@ export function Footer() {
         <div>
           <h4 className="text-sm font-semibold mb-4">Account</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/join" className="hover:text-foreground">Join Now</Link></li>
-            <li><Link to="/login" className="hover:text-foreground">Member Login</Link></li>
+            <li><Link to="/auth" className="hover:text-foreground">Join Now</Link></li>
+            <li><Link to="/auth" className="hover:text-foreground">Member Login</Link></li>
             <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
           </ul>
         </div>
