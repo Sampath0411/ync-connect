@@ -91,7 +91,7 @@ function Hero() {
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
         >
           <Link
-            to="/join"
+            to="/auth"
             className="glow-btn group inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-medium"
           >
             Join Community
@@ -104,7 +104,7 @@ function Hero() {
             Explore Events
           </Link>
           <Link
-            to="/login"
+            to="/auth"
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm text-muted-foreground hover:text-foreground transition"
           >
             Team Member Login →
@@ -220,7 +220,7 @@ function Membership() {
           </ul>
           <div className="mt-8 flex gap-3">
             <Link
-              to="/join"
+              to="/auth"
               className="glow-btn inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium"
             >
               Join Membership <ArrowRight className="h-4 w-4" />
@@ -422,7 +422,7 @@ function CTA() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <Link
-              to="/join"
+              to="/auth"
               className="glow-btn inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-medium"
             >
               Create your account

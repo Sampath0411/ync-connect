@@ -56,7 +56,7 @@ function Membership() {
                 </p>
               </div>
               <Link
-                to="/join"
+                to="/auth"
                 className="glow-btn inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-medium"
               >
                 Join Now <ArrowRight className="h-4 w-4" />
