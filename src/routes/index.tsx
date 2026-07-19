@@ -44,6 +44,13 @@ const fadeUp = {
 } as const;
 
 function Landing() {
+  if (typeof window !== "undefined") {
+    // scroll to hash on mount
+    setTimeout(() => {
+      const h = window.location.hash.replace("#", "");
+      if (h) document.getElementById(h)?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }
   return (
     <div>
       <section id="home"><Hero /></section>
@@ -58,6 +65,7 @@ function Landing() {
     </div>
   );
 }
+
 
 function Hero() {
   return (
