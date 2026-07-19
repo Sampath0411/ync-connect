@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Calendar,
@@ -13,7 +15,12 @@ import {
   BookOpen,
   ShieldCheck,
   Rocket,
+  Mail,
+  MapPin,
+  Camera,
+  Send,
 } from "lucide-react";
+import { listPublicEvents } from "@/lib/community.functions";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -39,11 +46,14 @@ const fadeUp = {
 function Landing() {
   return (
     <div>
-      <Hero />
+      <section id="home"><Hero /></section>
       <Stats />
-      <Membership />
+      <section id="about"><About /></section>
+      <section id="membership"><Membership /></section>
+      <section id="events"><EventsSection /></section>
+      <section id="gallery"><Gallery /></section>
       <Features />
-      <EventsPreview />
+      <section id="contact"><Contact /></section>
       <CTA />
     </div>
   );
@@ -51,7 +61,7 @@ function Landing() {
 
 function Hero() {
   return (
-    <section className="relative pt-40 pb-24 sm:pt-48 sm:pb-32">
+    <div className="relative pt-40 pb-24 sm:pt-48 sm:pb-32">
       <div className="mx-auto max-w-6xl px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -97,64 +107,15 @@ function Hero() {
             Join Community
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
-          <Link
-            to="/events"
+          <a
+            href="#events"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl glass hover:bg-white/10 transition font-medium"
           >
             Explore Events
-          </Link>
-          <Link
-            to="/auth"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            Team Member Login →
-          </Link>
-        </motion.div>
-
-        {/* floating preview card */}
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.4 }}
-          className="mt-24 relative mx-auto max-w-4xl"
-        >
-          <div className="glass rounded-3xl p-2 shadow-[0_40px_120px_-30px_oklch(0.55_0.22_265/0.6)]">
-            <div className="rounded-2xl bg-gradient-to-br from-navy to-background p-8 sm:p-12 text-left overflow-hidden relative">
-              <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-accent/30 blur-3xl" />
-              <div className="relative grid sm:grid-cols-2 gap-8 items-center">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-accent">Digital Membership Card</p>
-                  <p className="mt-2 font-display text-2xl font-bold">Aarav Sharma</p>
-                  <p className="text-sm text-muted-foreground">YNC-2026-0142 · Valid 12 months</p>
-                  <div className="mt-6 flex gap-4 text-xs">
-                    <div>
-                      <p className="text-muted-foreground">Issued</p>
-                      <p className="font-medium">Jan 2026</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Expires</p>
-                      <p className="font-medium">Jan 2027</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <div className="grid h-32 w-32 place-items-center rounded-2xl bg-white/95">
-                    <div
-                      className="h-24 w-24"
-                      style={{
-                        backgroundImage:
-                          "conic-gradient(#111 0 25%, transparent 0 50%, #111 0 75%, transparent 0), radial-gradient(circle at 20% 20%, #111 20%, transparent 21%), radial-gradient(circle at 80% 20%, #111 20%, transparent 21%), radial-gradient(circle at 20% 80%, #111 20%, transparent 21%)",
-                        backgroundSize: "8px 8px, 100% 100%, 100% 100%, 100% 100%",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          </a>
         </motion.div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -168,18 +129,11 @@ const stats = [
 function Stats() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
-      <motion.div
-        {...fadeUp}
-        className="glass rounded-3xl px-8 py-10 grid grid-cols-2 sm:grid-cols-4 gap-6"
-      >
+      <motion.div {...fadeUp} className="glass rounded-3xl px-8 py-10 grid grid-cols-2 sm:grid-cols-4 gap-6">
         {stats.map((s) => (
           <div key={s.label} className="text-center">
-            <p className="font-display text-3xl sm:text-4xl font-bold gradient-text">
-              {s.value}
-            </p>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              {s.label}
-            </p>
+            <p className="font-display text-3xl sm:text-4xl font-bold gradient-text">{s.value}</p>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{s.label}</p>
           </div>
         ))}
       </motion.div>
@@ -187,9 +141,42 @@ function Stats() {
   );
 }
 
+function About() {
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-24">
+      <motion.div {...fadeUp} className="text-center max-w-3xl mx-auto">
+        <p className="text-xs uppercase tracking-widest text-accent">About YNC</p>
+        <h2 className="mt-3 text-4xl sm:text-5xl font-bold">
+          A community <span className="gradient-text">built for young leaders</span>.
+        </h2>
+        <p className="mt-5 text-muted-foreground text-lg">
+          YNC is a movement of curious, ambitious, and kind young people. We host meetups, workshops
+          and volunteer drives — and we make sure every member finds their people, their mentors,
+          and their next opportunity.
+        </p>
+      </motion.div>
+      <div className="mt-14 grid gap-4 sm:grid-cols-3">
+        {[
+          { icon: Rocket, title: "Our mission", body: "Empower youth through community, events, and mentorship." },
+          { icon: Heart, title: "Our values", body: "Kindness, curiosity, courage, and consistency." },
+          { icon: Users, title: "Our people", body: "Students, creators, founders, volunteers — all welcome." },
+        ].map((it) => (
+          <motion.div key={it.title} {...fadeUp} className="glass rounded-2xl p-6">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-primary to-accent">
+              <it.icon className="h-5 w-5 text-white" />
+            </div>
+            <h3 className="mt-4 font-semibold">{it.title}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{it.body}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Membership() {
   return (
-    <section id="membership" className="mx-auto max-w-6xl px-4 py-24">
+    <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         <motion.div {...fadeUp}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">
@@ -225,12 +212,6 @@ function Membership() {
             >
               Join Membership <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              to="/membership"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass hover:bg-white/10 transition font-medium"
-            >
-              Learn more
-            </Link>
           </div>
         </motion.div>
 
@@ -240,9 +221,7 @@ function Membership() {
             <div className="relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    Membership
-                  </p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">Membership</p>
                   <p className="mt-1 font-display text-3xl font-bold">
                     <span className="line-through text-muted-foreground text-xl mr-2">₹999</span>
                     <span className="gradient-text">Free</span>
@@ -252,9 +231,7 @@ function Membership() {
                   <CreditCard className="h-6 w-6 text-white" />
                 </div>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Limited period. 1-year validity from approval.
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">Limited period. 1-year validity from approval.</p>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 {[
                   { icon: Ticket, label: "Ticket discounts" },
@@ -262,10 +239,7 @@ function Membership() {
                   { icon: Award, label: "Recognition" },
                   { icon: Heart, label: "Volunteer perks" },
                 ].map(({ icon: Icon, label }) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl border border-border p-4 hover:bg-white/5 transition"
-                  >
+                  <div key={label} className="rounded-2xl border border-border p-4 hover:bg-white/5 transition">
                     <Icon className="h-5 w-5 text-accent" />
                     <p className="mt-2 text-sm font-medium">{label}</p>
                   </div>
@@ -275,7 +249,102 @@ function Membership() {
           </div>
         </motion.div>
       </div>
-    </section>
+    </div>
+  );
+}
+
+function EventsSection() {
+  const eventsFn = useServerFn(listPublicEvents);
+  const q = useQuery({ queryKey: ["public-events"], queryFn: () => eventsFn() });
+  const events = (q.data ?? []).slice(0, 6);
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-24">
+      <motion.div {...fadeUp} className="flex items-end justify-between mb-10 flex-wrap gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-accent">Community</p>
+          <h2 className="mt-2 text-4xl sm:text-5xl font-bold">Upcoming events</h2>
+          <p className="mt-3 text-muted-foreground">Members get automatic discounts at checkout.</p>
+        </div>
+        <Link to="/auth" className="text-sm text-accent hover:underline inline-flex items-center gap-1">
+          Reserve tickets <ArrowRight className="h-4 w-4" />
+        </Link>
+      </motion.div>
+
+      {q.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : events.length === 0 ? (
+        <div className="glass rounded-3xl p-10 text-center text-sm text-muted-foreground">
+          No events published yet. Check back soon.
+        </div>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-3">
+          {events.map((e: any, i: number) => (
+            <motion.article
+              key={e.id}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="group glass rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className="h-40 bg-gradient-to-br from-primary to-accent relative">
+                {e.cover_url && (
+                  <img src={e.cover_url} alt={e.title} className="absolute inset-0 h-full w-full object-cover opacity-80" />
+                )}
+                <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs bg-black/40 backdrop-blur">
+                  {e.category ?? "Event"}
+                </div>
+                <div className="absolute bottom-4 left-4 text-white font-display font-bold text-2xl">
+                  {new Date(e.starts_at).toLocaleDateString(undefined, { month: "short", day: "2-digit" })}
+                </div>
+              </div>
+              <div className="p-6">
+                <h3 className="font-semibold text-lg">{e.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {[e.venue, e.city].filter(Boolean).join(" · ") || "—"}
+                </p>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-accent">Members save more</span>
+                  <Link to="/auth" className="inline-flex items-center gap-1 text-sm font-medium text-accent">
+                    Details <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Gallery() {
+  const shots = Array.from({ length: 8 }).map((_, i) => `hsl(${(i * 47) % 360} 70% 55%)`);
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-24">
+      <motion.div {...fadeUp} className="text-center max-w-2xl mx-auto">
+        <p className="text-xs uppercase tracking-widest text-accent inline-flex items-center gap-2 justify-center">
+          <Camera className="h-3.5 w-3.5" /> Gallery
+        </p>
+        <h2 className="mt-3 text-4xl sm:text-5xl font-bold">
+          Moments from <span className="gradient-text">the community</span>.
+        </h2>
+      </motion.div>
+      <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {shots.map((c, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: i * 0.05 }}
+            style={{ background: `linear-gradient(135deg, ${c}, transparent)` }}
+            className={`rounded-2xl ${i % 3 === 0 ? "aspect-[3/4]" : "aspect-square"} glass overflow-hidden`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -297,12 +366,7 @@ function Features() {
         <h2 className="text-4xl sm:text-5xl font-bold">
           Everything you need to <span className="gradient-text">belong</span>.
         </h2>
-        <p className="mt-4 text-muted-foreground">
-          Thoughtfully designed features that make the community experience
-          feel premium, personal and alive.
-        </p>
       </motion.div>
-
       <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {featureItems.map((f, i) => (
           <motion.div
@@ -325,91 +389,46 @@ function Features() {
   );
 }
 
-function EventsPreview() {
-  const events = [
-    {
-      tag: "Upcoming",
-      date: "Mar 22",
-      title: "YNC Founders Night",
-      location: "Bengaluru · The Leela",
-      color: "from-primary to-accent",
-    },
-    {
-      tag: "Workshop",
-      date: "Apr 06",
-      title: "Storytelling for Leaders",
-      location: "Online · Live",
-      color: "from-accent to-primary",
-    },
-    {
-      tag: "Community",
-      date: "Apr 19",
-      title: "Volunteer Day 2026",
-      location: "Mumbai · BKC",
-      color: "from-primary to-accent",
-    },
-  ];
+function Contact() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-24">
-      <div className="flex items-end justify-between mb-10">
+    <div className="mx-auto max-w-6xl px-4 py-24">
+      <div className="grid lg:grid-cols-2 gap-10 items-start">
         <motion.div {...fadeUp}>
-          <h2 className="text-4xl sm:text-5xl font-bold">Upcoming events</h2>
-          <p className="mt-3 text-muted-foreground">
-            Members get automatic discounts at checkout.
+          <p className="text-xs uppercase tracking-widest text-accent">Contact</p>
+          <h2 className="mt-2 text-4xl sm:text-5xl font-bold">
+            Say <span className="gradient-text">hello</span>.
+          </h2>
+          <p className="mt-4 text-muted-foreground">
+            Questions, partnerships, or just want to volunteer? Reach out — we read every message.
           </p>
+          <div className="mt-6 space-y-3 text-sm">
+            <p className="flex items-center gap-3"><Mail className="h-4 w-4 text-accent" /> hello@yncommunity.org</p>
+            <p className="flex items-center gap-3"><MapPin className="h-4 w-4 text-accent" /> Bengaluru · Mumbai · Delhi</p>
+          </div>
         </motion.div>
-        <Link
-          to="/events"
-          className="hidden sm:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        <motion.form
+          {...fadeUp}
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+          className="glass rounded-3xl p-6 space-y-3"
         >
-          View all <ArrowRight className="h-4 w-4" />
-        </Link>
+          <input placeholder="Your name" className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
+          <input placeholder="Email" type="email" className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
+          <textarea placeholder="Message" rows={4} className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
+          <button className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium inline-flex items-center justify-center gap-2">
+            <Send className="h-4 w-4" /> Send message
+          </button>
+        </motion.form>
       </div>
-      <div className="grid gap-5 md:grid-cols-3">
-        {events.map((e, i) => (
-          <motion.article
-            key={e.title}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="group glass rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className={`h-40 bg-gradient-to-br ${e.color} relative`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,white/30,transparent_60%)] opacity-30" />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs bg-black/30 backdrop-blur">
-                {e.tag}
-              </div>
-              <div className="absolute bottom-4 left-4 text-white font-display font-bold text-2xl">
-                {e.date}
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="font-semibold text-lg">{e.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{e.location}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  <span className="text-accent">Members save 30%</span>
-                </span>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-accent group-hover:translate-x-0.5 transition">
-                  Details <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </div>
-          </motion.article>
-        ))}
-      </div>
-    </section>
+    </div>
   );
 }
 
 function CTA() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-24">
-      <motion.div
-        {...fadeUp}
-        className="relative overflow-hidden rounded-3xl p-10 sm:p-16 text-center glass"
-      >
+      <motion.div {...fadeUp} className="relative overflow-hidden rounded-3xl p-10 sm:p-16 text-center glass">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-80 w-[600px] rounded-full bg-primary/40 blur-3xl" />
         <div className="relative">
           <Zap className="mx-auto h-8 w-8 text-accent" />
@@ -417,8 +436,7 @@ function CTA() {
             Ready to <span className="gradient-text">join the movement?</span>
           </h2>
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-            Register today, verify your email, and unlock a year of community,
-            events and mentorship — completely free.
+            Create an account and unlock a year of community, events and mentorship — completely free.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <Link
@@ -427,12 +445,6 @@ function CTA() {
             >
               Create your account
               <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              to="/about"
-              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl glass hover:bg-white/10 transition font-medium"
-            >
-              Learn about YNC
             </Link>
           </div>
         </div>
