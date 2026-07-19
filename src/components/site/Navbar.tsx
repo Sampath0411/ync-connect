@@ -20,6 +20,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const { session } = useSession();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -32,6 +33,17 @@ export function Navbar() {
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
+
+  const handleNav = (e: React.MouseEvent, hash: string) => {
+    setOpen(false);
+    if (pathname === "/") {
+      e.preventDefault();
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${hash}`);
+    }
+  };
+
 
   return (
     <motion.header
