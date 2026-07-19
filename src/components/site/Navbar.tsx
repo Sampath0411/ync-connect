@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
@@ -6,13 +6,14 @@ import { useSession } from "@/lib/use-session";
 import { supabase } from "@/integrations/supabase/client";
 
 const links = [
-  { to: "/", label: "Home" },
-  { to: "/about", label: "About" },
-  { to: "/membership", label: "Membership" },
-  { to: "/events", label: "Events" },
-  { to: "/gallery", label: "Gallery" },
-  { to: "/contact", label: "Contact" },
+  { hash: "home", label: "Home" },
+  { hash: "about", label: "About" },
+  { hash: "membership", label: "Membership" },
+  { hash: "events", label: "Events" },
+  { hash: "gallery", label: "Gallery" },
+  { hash: "contact", label: "Contact" },
 ] as const;
+
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
