@@ -115,11 +115,15 @@ export function Navbar() {
               className="glass mt-2 rounded-2xl p-4 lg:hidden"
             >
               <div className="flex flex-col gap-1">
-                {links.map((l) => (
-                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="px-3 py-2.5 rounded-lg text-sm hover:bg-white/5">
-                    {l.label}
-                  </Link>
-                ))}
+                {links.map((l) => {
+                  const href = pathname === "/" ? `#${l.hash}` : `/#${l.hash}`;
+                  return (
+                    <a key={l.hash} href={href} onClick={(e) => handleNav(e, l.hash)} className="px-3 py-2.5 rounded-lg text-sm hover:bg-white/5">
+                      {l.label}
+                    </a>
+                  );
+                })}
+
                 <div className="h-px bg-border my-2" />
                 {session ? (
                   <>
