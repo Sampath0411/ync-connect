@@ -104,8 +104,8 @@ function TeamPanel() {
               )}
             </div>
           )}
-        </div>
       </div>
-    </PageShell>
+    </div>
   );
 }
+
