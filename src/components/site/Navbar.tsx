@@ -53,29 +53,21 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg"
-                activeProps={{ className: "text-foreground" }}
-                activeOptions={{ exact: l.to === "/" }}
-              >
-                {({ isActive }) => (
-                  <>
-                    <span>{l.label}</span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-active"
-                        className="absolute inset-0 -z-10 rounded-lg bg-white/5 border border-white/10"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </>
-                )}
-              </Link>
-            ))}
+            {links.map((l) => {
+              const href = pathname === "/" ? `#${l.hash}` : `/#${l.hash}`;
+              return (
+                <a
+                  key={l.hash}
+                  href={href}
+                  onClick={(e) => handleNav(e, l.hash)}
+                  className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg"
+                >
+                  {l.label}
+                </a>
+              );
+            })}
           </nav>
+
 
           <div className="hidden lg:flex items-center gap-2">
             {session ? (
