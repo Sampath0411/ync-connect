@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authenticated/dashboard.team'
+import { Route as AuthenticatedDashboardEventsRouteImport } from './routes/_authenticated/dashboard.events'
 import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated/dashboard.admin'
 
 const MembershipRoute = MembershipRouteImport.update({
@@ -78,6 +79,12 @@ const AuthenticatedDashboardTeamRoute =
     path: '/team',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardEventsRoute =
+  AuthenticatedDashboardEventsRouteImport.update({
+    id: '/events',
+    path: '/events',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardAdminRoute =
   AuthenticatedDashboardAdminRouteImport.update({
     id: '/admin',
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/membership': typeof MembershipRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
@@ -107,6 +115,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof GalleryRoute
   '/membership': typeof MembershipRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
@@ -122,6 +131,7 @@ export interface FileRoutesById {
   '/membership': typeof MembershipRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
+  '/_authenticated/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/_authenticated/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/membership'
     | '/dashboard'
     | '/dashboard/admin'
+    | '/dashboard/events'
     | '/dashboard/team'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/membership'
     | '/dashboard/admin'
+    | '/dashboard/events'
     | '/dashboard/team'
     | '/dashboard'
   id:
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
     | '/membership'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/admin'
+    | '/_authenticated/dashboard/events'
     | '/_authenticated/dashboard/team'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardTeamRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/events': {
+      id: '/_authenticated/dashboard/events'
+      path: '/events'
+      fullPath: '/dashboard/events'
+      preLoaderRoute: typeof AuthenticatedDashboardEventsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/admin': {
       id: '/_authenticated/dashboard/admin'
       path: '/admin'
@@ -269,6 +289,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAdminRoute: typeof AuthenticatedDashboardAdminRoute
+  AuthenticatedDashboardEventsRoute: typeof AuthenticatedDashboardEventsRoute
   AuthenticatedDashboardTeamRoute: typeof AuthenticatedDashboardTeamRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
@@ -276,6 +297,7 @@ interface AuthenticatedDashboardRouteChildren {
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardAdminRoute: AuthenticatedDashboardAdminRoute,
+    AuthenticatedDashboardEventsRoute: AuthenticatedDashboardEventsRoute,
     AuthenticatedDashboardTeamRoute: AuthenticatedDashboardTeamRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
