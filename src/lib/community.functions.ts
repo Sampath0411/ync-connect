@@ -344,6 +344,31 @@ export const adminListUsers = createServerFn({ method: "GET" })
     }));
   });
 
+// Recent sign-in / activity view — pulls last_sign_in_at from auth.users (admin only)
+export const adminListSignins = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 100 });
+    if (error) throw new Error(error.message);
+    const users = (data?.users ?? [])
+      .map((u) => ({
+        id: u.id,
+        email: u.email,
+        full_name: (u.user_metadata as any)?.full_name ?? null,
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at,
+      }))
+      .sort((a, b) => (b.last_sign_in_at ?? "").localeCompare(a.last_sign_in_at ?? ""));
+    return users;
+  });
+
+
 export const adminSetRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { user_id: string; role: "admin" | "team" | "member"; grant: boolean }) =>

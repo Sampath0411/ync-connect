@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, X, Sparkles, LayoutDashboard } from "lucide-react";
@@ -6,19 +6,21 @@ import { useSession } from "@/lib/use-session";
 import { supabase } from "@/integrations/supabase/client";
 
 const links = [
-  { to: "/", label: "Home" },
-  { to: "/about", label: "About" },
-  { to: "/membership", label: "Membership" },
-  { to: "/events", label: "Events" },
-  { to: "/gallery", label: "Gallery" },
-  { to: "/contact", label: "Contact" },
+  { hash: "home", label: "Home" },
+  { hash: "about", label: "About" },
+  { hash: "membership", label: "Membership" },
+  { hash: "events", label: "Events" },
+  { hash: "gallery", label: "Gallery" },
+  { hash: "contact", label: "Contact" },
 ] as const;
+
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { session } = useSession();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -31,6 +33,17 @@ export function Navbar() {
     await supabase.auth.signOut();
     navigate({ to: "/" });
   };
+
+  const handleNav = (e: React.MouseEvent, hash: string) => {
+    setOpen(false);
+    if (pathname === "/") {
+      e.preventDefault();
+      const el = document.getElementById(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      history.replaceState(null, "", `#${hash}`);
+    }
+  };
+
 
   return (
     <motion.header
@@ -52,29 +65,21 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
-            {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg"
-                activeProps={{ className: "text-foreground" }}
-                activeOptions={{ exact: l.to === "/" }}
-              >
-                {({ isActive }) => (
-                  <>
-                    <span>{l.label}</span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-active"
-                        className="absolute inset-0 -z-10 rounded-lg bg-white/5 border border-white/10"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </>
-                )}
-              </Link>
-            ))}
+            {links.map((l) => {
+              const href = pathname === "/" ? `#${l.hash}` : `/#${l.hash}`;
+              return (
+                <a
+                  key={l.hash}
+                  href={href}
+                  onClick={(e) => handleNav(e, l.hash)}
+                  className="relative px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg"
+                >
+                  {l.label}
+                </a>
+              );
+            })}
           </nav>
+
 
           <div className="hidden lg:flex items-center gap-2">
             {session ? (
@@ -110,11 +115,15 @@ export function Navbar() {
               className="glass mt-2 rounded-2xl p-4 lg:hidden"
             >
               <div className="flex flex-col gap-1">
-                {links.map((l) => (
-                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="px-3 py-2.5 rounded-lg text-sm hover:bg-white/5">
-                    {l.label}
-                  </Link>
-                ))}
+                {links.map((l) => {
+                  const href = pathname === "/" ? `#${l.hash}` : `/#${l.hash}`;
+                  return (
+                    <a key={l.hash} href={href} onClick={(e) => handleNav(e, l.hash)} className="px-3 py-2.5 rounded-lg text-sm hover:bg-white/5">
+                      {l.label}
+                    </a>
+                  );
+                })}
+
                 <div className="h-px bg-border my-2" />
                 {session ? (
                   <>

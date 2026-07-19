@@ -1,10 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { PageShell } from "@/components/site/PageShell";
 import { getMe, verifyCode } from "@/lib/community.functions";
-import { ArrowLeft, ScanLine, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { ScanLine, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/team")({
@@ -33,12 +32,9 @@ function TeamPanel() {
   });
 
   return (
-    <PageShell>
-      <div className="mx-auto max-w-3xl px-4">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <ArrowLeft className="h-4 w-4" /> Back to dashboard
-        </Link>
-        <div className="glass rounded-3xl p-8">
+    <div className="max-w-3xl">
+      <div className="glass rounded-3xl p-8">
+
           <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-3">
             <ScanLine className="h-3.5 w-3.5" /> Check-in / Verify
           </div>
@@ -108,8 +104,8 @@ function TeamPanel() {
               )}
             </div>
           )}
-        </div>
       </div>
-    </PageShell>
+    </div>
   );
 }
+

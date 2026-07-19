@@ -1,8 +1,7 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { PageShell } from "@/components/site/PageShell";
 import {
   getMe,
   listPendingMemberships,
@@ -12,8 +11,9 @@ import {
   adminListEvents,
   adminUpsertEvent,
   adminDeleteEvent,
+  adminListSignins,
 } from "@/lib/community.functions";
-import { ArrowLeft, ShieldCheck, Check, X, Loader2, Plus, Trash2, Edit3 } from "lucide-react";
+import { ShieldCheck, Check, X, Loader2, Plus, Trash2, Edit3, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/admin")({
@@ -27,40 +27,82 @@ export const Route = createFileRoute("/_authenticated/dashboard/admin")({
 });
 
 function AdminPanel() {
-  const [tab, setTab] = useState<"memberships" | "users" | "events">("memberships");
+  const [tab, setTab] = useState<"memberships" | "users" | "events" | "activity">("memberships");
 
   return (
-    <PageShell>
-      <div className="mx-auto max-w-6xl px-4">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <ArrowLeft className="h-4 w-4" /> Back to dashboard
-        </Link>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-2">
-          <ShieldCheck className="h-3.5 w-3.5" /> Admin
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-display font-bold">Manage the community</h1>
-
-        <div className="glass rounded-2xl p-1.5 flex gap-1 w-fit mt-6 mb-6">
-          {(["memberships", "users", "events"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-xl text-sm capitalize transition ${
-                tab === t ? "bg-gradient-to-r from-primary to-accent text-white" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {tab === "memberships" && <MembershipsTab />}
-        {tab === "users" && <UsersTab />}
-        {tab === "events" && <EventsTab />}
+    <div>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-2">
+        <ShieldCheck className="h-3.5 w-3.5" /> Admin
       </div>
-    </PageShell>
+      <h1 className="text-3xl sm:text-4xl font-display font-bold">Manage the community</h1>
+
+      <div className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 w-fit mt-6 mb-6">
+        {(["memberships", "users", "events", "activity"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded-xl text-sm capitalize transition ${
+              tab === t ? "bg-gradient-to-r from-primary to-accent text-white" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "memberships" && <MembershipsTab />}
+      {tab === "users" && <UsersTab />}
+      {tab === "events" && <EventsTab />}
+      {tab === "activity" && <ActivityTab />}
+    </div>
   );
 }
+
+function ActivityTab() {
+  const listFn = useServerFn(adminListSignins);
+  const q = useQuery({ queryKey: ["admin-signins"], queryFn: () => listFn() });
+  return (
+    <div className="glass rounded-3xl p-6">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-4">
+        <Activity className="h-3.5 w-3.5" /> Recent activity
+      </div>
+      {q.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground border-b border-border">
+                <th className="py-2 pr-4">Name</th>
+                <th className="py-2 pr-4">Email</th>
+                <th className="py-2 pr-4">Last sign-in</th>
+                <th className="py-2 pr-4">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {q.data?.map((u: any) => (
+                <tr key={u.id} className="border-b border-border/50">
+                  <td className="py-3 pr-4">{u.full_name ?? "—"}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{u.email ?? "—"}</td>
+                  <td className="py-3 pr-4">
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : "Never"}
+                  </td>
+                  <td className="py-3 pr-4 text-muted-foreground">
+                    {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                  </td>
+                </tr>
+              ))}
+              {q.data?.length === 0 && (
+                <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">No users yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function MembershipsTab() {
   const listFn = useServerFn(listPendingMemberships);
