@@ -585,3 +585,148 @@ export const adminBootstrapLogin = createServerFn({ method: "POST" })
 
     return { ok: true as const, email: ADMIN_EMAIL, password: ADMIN_PASSWORD };
   });
+
+// ---------- Booking flow: coupons + multi-ticket ----------
+export const validateCoupon = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { code: string; event_id: string }) =>
+    z.object({ code: z.string().min(1).max(64), event_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const code = data.code.trim().toUpperCase();
+    const { data: c, error } = await context.supabase
+      .from("coupons")
+      .select("*")
+      .eq("code", code)
+      .eq("active", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!c) return { ok: false as const, error: "Coupon not found" };
+    if (c.valid_until && new Date(c.valid_until) < new Date()) return { ok: false as const, error: "Coupon expired" };
+    if (c.max_uses != null && c.uses_count >= c.max_uses) return { ok: false as const, error: "Coupon exhausted" };
+    return {
+      ok: true as const,
+      code: c.code,
+      percent_off: c.percent_off,
+      amount_off_cents: c.amount_off_cents,
+    };
+  });
+
+function computeUnitPrice(base: number, coupon: { percent_off: number | null; amount_off_cents: number | null } | null) {
+  let price = base;
+  if (coupon?.percent_off) price = Math.round(price * (1 - coupon.percent_off / 100));
+  if (coupon?.amount_off_cents) price = Math.max(0, price - coupon.amount_off_cents);
+  return price;
+}
+
+export const bookEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: { event_id: string; quantity: number; seat_labels?: string[]; coupon_code?: string }) =>
+      z
+        .object({
+          event_id: z.string().uuid(),
+          quantity: z.number().int().min(1).max(10),
+          seat_labels: z.array(z.string().max(20)).max(10).optional(),
+          coupon_code: z.string().max(64).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const eventRes = await supabase
+      .from("events")
+      .select("id, price_cents, member_price_cents, capacity, status")
+      .eq("id", data.event_id)
+      .single();
+    if (eventRes.error) throw new Error(eventRes.error.message);
+    if (eventRes.data.status !== "published") throw new Error("Event not available for booking");
+
+    // Capacity check
+    if (eventRes.data.capacity != null) {
+      const { count } = await supabase
+        .from("tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", data.event_id);
+      if ((count ?? 0) + data.quantity > eventRes.data.capacity) throw new Error("Not enough seats remaining");
+    }
+
+    const membershipRes = await supabase
+      .from("memberships")
+      .select("status, valid_until")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const isActiveMember =
+      membershipRes.data?.status === "approved" &&
+      (!membershipRes.data.valid_until || new Date(membershipRes.data.valid_until) > new Date());
+    const basePrice = isActiveMember
+      ? eventRes.data.member_price_cents
+      : eventRes.data.price_cents;
+
+    // Validate coupon (optional)
+    let coupon: { percent_off: number | null; amount_off_cents: number | null; code: string } | null = null;
+    if (data.coupon_code) {
+      const code = data.coupon_code.trim().toUpperCase();
+      const { data: c } = await supabase
+        .from("coupons")
+        .select("code, percent_off, amount_off_cents, valid_until, max_uses, uses_count, active")
+        .eq("code", code)
+        .eq("active", true)
+        .maybeSingle();
+      if (!c) throw new Error("Invalid coupon");
+      if (c.valid_until && new Date(c.valid_until) < new Date()) throw new Error("Coupon expired");
+      if (c.max_uses != null && c.uses_count >= c.max_uses) throw new Error("Coupon exhausted");
+      coupon = { code: c.code, percent_off: c.percent_off, amount_off_cents: c.amount_off_cents };
+    }
+
+    const unit = computeUnitPrice(basePrice, coupon);
+
+    // Booking group ties this batch together
+    const bookingGroup = crypto.randomUUID();
+    const rows = Array.from({ length: data.quantity }, (_, i) => ({
+      event_id: data.event_id,
+      user_id: userId,
+      amount_cents: unit,
+      status: "paid" as const, // Payment gateway not wired; auto-confirm (see note in UI)
+      coupon_code: coupon?.code ?? null,
+      seat_label: data.seat_labels?.[i] ?? null,
+      booking_group: bookingGroup,
+    }));
+
+    const ins = await supabase.from("tickets").insert(rows).select("id");
+    if (ins.error) throw new Error(ins.error.message);
+
+    // Best-effort coupon usage bump (RLS: admins only) — do via admin client
+    if (coupon) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.rpc as any; // noop typing guard
+      await supabaseAdmin
+        .from("coupons")
+        .update({ uses_count: (await supabaseAdmin.from("coupons").select("uses_count").eq("code", coupon.code).single()).data?.uses_count! + data.quantity })
+        .eq("code", coupon.code);
+    }
+
+    return {
+      ok: true as const,
+      booking_group: bookingGroup,
+      ticket_ids: (ins.data ?? []).map((t) => t.id),
+      unit_price_cents: unit,
+      total_cents: unit * data.quantity,
+    };
+  });
+
+export const getTicketById = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ticket_id: string }) => z.object({ ticket_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: t, error } = await supabase
+      .from("tickets")
+      .select("*, events(id, title, description, starts_at, ends_at, venue, city, cover_url)")
+      .eq("id", data.ticket_id)
+      .single();
+    if (error) throw new Error(error.message);
+    if (t.user_id !== userId) throw new Error("Forbidden");
+    return t;
+  });
