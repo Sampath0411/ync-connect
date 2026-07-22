@@ -93,12 +93,17 @@ export const listPendingMemberships = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data: memberships, error } = await supabaseAdmin
       .from("memberships")
-      .select("*, profiles:profiles!memberships_user_id_fkey(full_name, phone, city)")
+      .select("*")
       .order("requested_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const ids = Array.from(new Set((memberships ?? []).map((m) => m.user_id)));
+    const profilesRes = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name, phone, city").in("id", ids)
+      : { data: [] as any[] };
+    const byId = new Map((profilesRes.data ?? []).map((p: any) => [p.id, p]));
+    return (memberships ?? []).map((m) => ({ ...m, profiles: byId.get(m.user_id) ?? null }));
   });
 
 export const decideMembership = createServerFn({ method: "POST" })
