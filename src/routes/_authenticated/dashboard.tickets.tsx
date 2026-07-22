@@ -52,26 +52,31 @@ function MyTickets() {
         <div className="grid gap-3 md:grid-cols-2">
           {q.data!.map((t: any) => (
             <div key={t.id} className="glass rounded-2xl p-5 flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold">{t.events?.title}</p>
+              <Link
+                to="/dashboard/bookings/$id/ticket"
+                params={{ id: t.id }}
+                className="flex-1 min-w-0"
+              >
+                <p className="font-semibold truncate">{t.events?.title}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {t.events?.starts_at ? new Date(t.events.starts_at).toLocaleString() : "—"}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   {[t.events?.venue, t.events?.city].filter(Boolean).join(" · ") || ""}
                 </p>
                 <p className="text-xs mt-2">
                   <span className="text-muted-foreground">Code:</span>{" "}
                   <span className="font-mono">{t.ticket_code.slice(0, 8).toUpperCase()}</span>
+                  {t.seat_label && <span className="ml-2 text-muted-foreground">seat {t.seat_label}</span>}
                   {t.checked_in_at && <span className="ml-2 text-green-400">✓ checked in</span>}
                 </p>
-              </div>
+              </Link>
               <button
                 onClick={async () => {
                   const res = await downloadFn({ data: { ticket_id: t.id } });
                   downloadBase64Pdf(res.pdfBase64, `ync-ticket-${t.ticket_code.slice(0, 8)}.pdf`);
                 }}
-                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 shrink-0"
                 aria-label="Download ticket"
               >
                 <Download className="h-4 w-4" />
