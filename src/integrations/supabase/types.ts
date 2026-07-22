@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      coupons: {
+        Row: {
+          active: boolean
+          amount_off_cents: number | null
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          max_uses: number | null
+          percent_off: number | null
+          uses_count: number
+          valid_until: string | null
+        }
+        Insert: {
+          active?: boolean
+          amount_off_cents?: number | null
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_uses?: number | null
+          percent_off?: number | null
+          uses_count?: number
+          valid_until?: string | null
+        }
+        Update: {
+          active?: boolean
+          amount_off_cents?: number | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          max_uses?: number | null
+          percent_off?: number | null
+          uses_count?: number
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           capacity: number | null
@@ -149,11 +188,14 @@ export type Database = {
       tickets: {
         Row: {
           amount_cents: number
+          booking_group: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          coupon_code: string | null
           created_at: string
           event_id: string
           id: string
+          seat_label: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           stripe_session_id: string | null
           ticket_code: string
@@ -161,11 +203,14 @@ export type Database = {
         }
         Insert: {
           amount_cents?: number
+          booking_group?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          coupon_code?: string | null
           created_at?: string
           event_id: string
           id?: string
+          seat_label?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           stripe_session_id?: string | null
           ticket_code?: string
@@ -173,11 +218,14 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          booking_group?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          coupon_code?: string | null
           created_at?: string
           event_id?: string
           id?: string
+          seat_label?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           stripe_session_id?: string | null
           ticket_code?: string
