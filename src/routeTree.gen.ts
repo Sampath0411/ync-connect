@@ -25,6 +25,7 @@ import { Route as AuthenticatedDashboardTeamRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as AuthenticatedDashboardEventsRouteImport } from './routes/_authenticated/dashboard.events'
 import { Route as AuthenticatedDashboardAdminRouteImport } from './routes/_authenticated/dashboard.admin'
+import { Route as AuthenticatedDashboardBookingsIdTicketRouteImport } from './routes/_authenticated/dashboard.bookings.$id.ticket'
 
 const MembershipRoute = MembershipRouteImport.update({
   id: '/membership',
@@ -111,6 +112,12 @@ const AuthenticatedDashboardAdminRoute =
     path: '/admin',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardBookingsIdTicketRoute =
+  AuthenticatedDashboardBookingsIdTicketRouteImport.update({
+    id: '/bookings/$id/ticket',
+    path: '/bookings/$id/ticket',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/dashboard/tickets': typeof AuthenticatedDashboardTicketsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/bookings/$id/ticket': typeof AuthenticatedDashboardBookingsIdTicketRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -144,6 +152,7 @@ export interface FileRoutesByTo {
   '/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/dashboard/tickets': typeof AuthenticatedDashboardTicketsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/bookings/$id/ticket': typeof AuthenticatedDashboardBookingsIdTicketRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -163,6 +172,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/team': typeof AuthenticatedDashboardTeamRoute
   '/_authenticated/dashboard/tickets': typeof AuthenticatedDashboardTicketsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/bookings/$id/ticket': typeof AuthenticatedDashboardBookingsIdTicketRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/dashboard/team'
     | '/dashboard/tickets'
     | '/dashboard/'
+    | '/dashboard/bookings/$id/ticket'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/dashboard/team'
     | '/dashboard/tickets'
     | '/dashboard'
+    | '/dashboard/bookings/$id/ticket'
   id:
     | '__root__'
     | '/'
@@ -216,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/team'
     | '/_authenticated/dashboard/tickets'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/bookings/$id/ticket'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -344,6 +357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardAdminRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/bookings/$id/ticket': {
+      id: '/_authenticated/dashboard/bookings/$id/ticket'
+      path: '/bookings/$id/ticket'
+      fullPath: '/dashboard/bookings/$id/ticket'
+      preLoaderRoute: typeof AuthenticatedDashboardBookingsIdTicketRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
@@ -354,6 +374,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardTeamRoute: typeof AuthenticatedDashboardTeamRoute
   AuthenticatedDashboardTicketsRoute: typeof AuthenticatedDashboardTicketsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardBookingsIdTicketRoute: typeof AuthenticatedDashboardBookingsIdTicketRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
@@ -364,6 +385,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardTeamRoute: AuthenticatedDashboardTeamRoute,
     AuthenticatedDashboardTicketsRoute: AuthenticatedDashboardTicketsRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+    AuthenticatedDashboardBookingsIdTicketRoute:
+      AuthenticatedDashboardBookingsIdTicketRoute,
   }
 
 const AuthenticatedDashboardRouteWithChildren =
