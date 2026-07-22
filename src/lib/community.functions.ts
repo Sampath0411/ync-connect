@@ -697,13 +697,17 @@ export const bookEvent = createServerFn({ method: "POST" })
     const ins = await supabase.from("tickets").insert(rows).select("id");
     if (ins.error) throw new Error(ins.error.message);
 
-    // Best-effort coupon usage bump (RLS: admins only) — do via admin client
+    // Best-effort coupon usage bump (RLS restricts updates to admins) — via admin client
     if (coupon) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.rpc as any; // noop typing guard
+      const cur = await supabaseAdmin
+        .from("coupons")
+        .select("uses_count")
+        .eq("code", coupon.code)
+        .single();
       await supabaseAdmin
         .from("coupons")
-        .update({ uses_count: (await supabaseAdmin.from("coupons").select("uses_count").eq("code", coupon.code).single()).data?.uses_count! + data.quantity })
+        .update({ uses_count: (cur.data?.uses_count ?? 0) + data.quantity })
         .eq("code", coupon.code);
     }
 
