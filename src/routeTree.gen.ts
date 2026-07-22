@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardTicketsRouteImport } from './routes/_authenticated/dashboard.tickets'
@@ -62,6 +63,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/gallery': typeof GalleryRoute
   '/membership': typeof MembershipRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/gallery': typeof GalleryRoute
   '/membership': typeof MembershipRoute
+  '/admin/login': typeof AdminLoginRoute
   '/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/gallery': typeof GalleryRoute
   '/membership': typeof MembershipRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
   '/_authenticated/dashboard/admin': typeof AuthenticatedDashboardAdminRoute
   '/_authenticated/dashboard/events': typeof AuthenticatedDashboardEventsRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/membership'
     | '/dashboard'
+    | '/admin/login'
     | '/dashboard/admin'
     | '/dashboard/events'
     | '/dashboard/profile'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/gallery'
     | '/membership'
+    | '/admin/login'
     | '/dashboard/admin'
     | '/dashboard/events'
     | '/dashboard/profile'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/membership'
     | '/_authenticated/dashboard'
+    | '/admin/login'
     | '/_authenticated/dashboard/admin'
     | '/_authenticated/dashboard/events'
     | '/_authenticated/dashboard/profile'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   GalleryRoute: typeof GalleryRoute
   MembershipRoute: typeof MembershipRoute
+  AdminLoginRoute: typeof AdminLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -371,17 +391,8 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   GalleryRoute: GalleryRoute,
   MembershipRoute: MembershipRoute,
+  AdminLoginRoute: AdminLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

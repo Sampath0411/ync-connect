@@ -535,3 +535,48 @@ export const verifyCode = createServerFn({ method: "POST" })
 
     return { kind: "unknown" as const };
   });
+
+// ---------- Admin bootstrap login (username/password) ----------
+const ADMIN_USERNAME = "9291493225";
+const ADMIN_PASSWORD = "sam@0411";
+const ADMIN_EMAIL = "admin-9291493225@ync.local";
+
+export const adminBootstrapLogin = createServerFn({ method: "POST" })
+  .inputValidator((d: { username: string; password: string }) =>
+    z.object({ username: z.string().min(1), password: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    if (data.username !== ADMIN_USERNAME || data.password !== ADMIN_PASSWORD) {
+      return { ok: false as const, error: "Invalid admin credentials" };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Find or create the admin auth user
+    const list = await supabaseAdmin.auth.admin.listUsers();
+    let user = list.data.users.find((u) => u.email === ADMIN_EMAIL);
+    if (!user) {
+      const created = await supabaseAdmin.auth.admin.createUser({
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
+        email_confirm: true,
+        user_metadata: { full_name: "YNC Admin" },
+      });
+      if (created.error) return { ok: false as const, error: created.error.message };
+      user = created.data.user!;
+    } else {
+      // Ensure password is in sync
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        password: ADMIN_PASSWORD,
+        email_confirm: true,
+      });
+    }
+
+    // Ensure profile + admin role
+    await supabaseAdmin.from("profiles").upsert({ id: user.id, full_name: "YNC Admin" });
+    await supabaseAdmin.from("user_roles").upsert(
+      { user_id: user.id, role: "admin" },
+      { onConflict: "user_id,role" },
+    );
+
+    return { ok: true as const, email: ADMIN_EMAIL, password: ADMIN_PASSWORD };
+  });
