@@ -692,3 +692,88 @@ export const getTicketById = createServerFn({ method: "GET" })
     if (t.user_id !== userId) throw new Error("Forbidden");
     return t;
   });
+
+// ---------- Admin: consistent authorization helper ----------
+async function assertAdmin(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+}
+
+// ---------- Admin: ban / unban ----------
+export const adminSetBanned = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string; banned: boolean }) =>
+    z.object({ user_id: z.string().uuid(), banned: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ banned: data.banned })
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Admin: activate membership directly ----------
+export const adminActivateMembership = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const validUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabaseAdmin.from("memberships").upsert(
+      {
+        user_id: data.user_id,
+        status: "approved",
+        approved_at: new Date().toISOString(),
+        approved_by: context.userId,
+        valid_until: validUntil,
+      },
+      { onConflict: "user_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------- Announcements ----------
+export const listPublicAnnouncements = createServerFn({ method: "GET" }).handler(async () => {
+  const s = publicClient();
+  const { data, error } = await s
+    .from("announcements")
+    .select("id, title, body, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+});
+
+export const adminUpsertAnnouncement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id?: string; title: string; body: string }) =>
+    z.object({ id: z.string().uuid().optional(), title: z.string().min(2).max(200), body: z.string().min(1).max(4000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const payload = { ...data, created_by: context.userId };
+    const { error } = data.id
+      ? await context.supabase.from("announcements").update(payload).eq("id", data.id)
+      : await context.supabase.from("announcements").insert(payload);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteAnnouncement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("announcements").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

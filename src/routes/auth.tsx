@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { PageShell } from "@/components/site/PageShell";
-import { Sparkles, Mail, Lock, User, Loader2 } from "lucide-react";
+import { Sparkles, Mail, Lock, User, Phone, MapPin, Calendar, Instagram, Twitter, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
@@ -12,13 +12,23 @@ export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — YNC" }] }),
 });
 
+type Step = 0 | 1 | 2 | 3;
+
 function Auth() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [step, setStep] = useState<Step>(0);
+  const [busy, setBusy] = useState(false);
+
+  // fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
+  const [city, setCity] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [twitter, setTwitter] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -26,29 +36,37 @@ function Auth() {
     });
   }, [navigate]);
 
-  const submit = async (e: React.FormEvent) => {
+  const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: name },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created — check your email if verification is enabled.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Welcome back!");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Welcome back!");
       navigate({ to: "/dashboard" });
     } catch (err: any) {
-      toast.error(err.message ?? "Something went wrong");
+      toast.error(err.message ?? "Sign-in failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const finishSignup = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: { full_name: name, phone, city, dob, instagram, twitter },
+        },
+      });
+      if (error) throw error;
+      toast.success("Account created!");
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      toast.error(err.message ?? "Sign-up failed");
     } finally {
       setBusy(false);
     }
@@ -66,6 +84,12 @@ function Auth() {
     }
   };
 
+  const canNext =
+    (step === 0 && email.trim() && password.length >= 6) ||
+    (step === 1 && name.trim() && phone.trim()) ||
+    (step === 2 && dob && city.trim()) ||
+    step === 3;
+
   return (
     <PageShell>
       <div className="mx-auto max-w-md px-4">
@@ -78,7 +102,7 @@ function Auth() {
               {mode === "signin" ? "Welcome back" : "Join YNC"}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {mode === "signin" ? "Sign in to your account" : "Create your free account"}
+              {mode === "signin" ? "Sign in to your account" : `Step ${step + 1} of 4`}
             </p>
           </div>
 
@@ -97,55 +121,98 @@ function Auth() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <form onSubmit={submit} className="space-y-4">
-            {mode === "signup" && (
-              <Field icon={<User className="h-4 w-4" />} label="Full name">
-                <input
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-transparent outline-none text-sm"
-                  placeholder="Your name"
-                />
+          {mode === "signin" ? (
+            <form onSubmit={signIn} className="space-y-4">
+              <Field icon={<Mail className="h-4 w-4" />} label="Email">
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="you@email.com" />
               </Field>
-            )}
-            <Field icon={<Mail className="h-4 w-4" />} label="Email">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-transparent outline-none text-sm"
-                placeholder="you@email.com"
-              />
-            </Field>
-            <Field icon={<Lock className="h-4 w-4" />} label="Password">
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-transparent outline-none text-sm"
-                placeholder="••••••••"
-              />
-            </Field>
+              <Field icon={<Lock className="h-4 w-4" />} label="Password">
+                <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="••••••••" />
+              </Field>
+              <button type="submit" disabled={busy} className="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium flex items-center justify-center gap-2 disabled:opacity-60">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Sign in
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              {step === 0 && (
+                <>
+                  <Field icon={<Mail className="h-4 w-4" />} label="Email">
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="you@email.com" />
+                  </Field>
+                  <Field icon={<Lock className="h-4 w-4" />} label="Password">
+                    <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="At least 6 characters" />
+                  </Field>
+                </>
+              )}
+              {step === 1 && (
+                <>
+                  <Field icon={<User className="h-4 w-4" />} label="Full name">
+                    <input required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="Your name" />
+                  </Field>
+                  <Field icon={<Phone className="h-4 w-4" />} label="Phone">
+                    <input required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="+91 …" />
+                  </Field>
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <Field icon={<Calendar className="h-4 w-4" />} label="Date of birth">
+                    <input type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-transparent outline-none text-sm" />
+                  </Field>
+                  <Field icon={<MapPin className="h-4 w-4" />} label="City">
+                    <input required value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="Hyderabad" />
+                  </Field>
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  <Field icon={<Instagram className="h-4 w-4" />} label="Instagram (optional)">
+                    <input value={instagram} onChange={(e) => setInstagram(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="@handle" />
+                  </Field>
+                  <Field icon={<Twitter className="h-4 w-4" />} label="Twitter / X (optional)">
+                    <input value={twitter} onChange={(e) => setTwitter(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="@handle" />
+                  </Field>
+                </>
+              )}
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="glow-btn w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mode === "signin" ? "Sign in" : "Create account"}
-            </button>
-          </form>
+              <div className="flex gap-2 pt-2">
+                {step > 0 && (
+                  <button type="button" onClick={() => setStep((s) => (s - 1) as Step)} className="px-4 py-3 rounded-xl border border-border text-sm inline-flex items-center gap-1">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                )}
+                {step < 3 ? (
+                  <button
+                    type="button"
+                    disabled={!canNext}
+                    onClick={() => setStep((s) => (s + 1) as Step)}
+                    className="glow-btn flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    Next <ArrowRight className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={finishSignup}
+                    className="glow-btn flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {busy && <Loader2 className="h-4 w-4 animate-spin" />} Create account
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {mode === "signin" ? "New here? " : "Already have an account? "}
             <button
               type="button"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              onClick={() => {
+                setMode(mode === "signin" ? "signup" : "signin");
+                setStep(0);
+              }}
               className="text-accent hover:underline"
             >
               {mode === "signin" ? "Create an account" : "Sign in"}
