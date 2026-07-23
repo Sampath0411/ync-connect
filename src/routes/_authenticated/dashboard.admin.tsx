@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/admin")({
 });
 
 function AdminPanel() {
-  const [tab, setTab] = useState<"memberships" | "users" | "events" | "activity">("memberships");
+  const [tab, setTab] = useState<"memberships" | "users" | "events" | "announcements" | "activity">("memberships");
 
   return (
     <div>
@@ -43,7 +43,7 @@ function AdminPanel() {
       <h1 className="text-3xl sm:text-4xl font-display font-bold">Manage the community</h1>
 
       <div className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 w-fit mt-6 mb-6">
-        {(["memberships", "users", "events", "activity"] as const).map((t) => (
+        {(["memberships", "users", "events", "announcements", "activity"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -59,10 +59,71 @@ function AdminPanel() {
       {tab === "memberships" && <MembershipsTab />}
       {tab === "users" && <UsersTab />}
       {tab === "events" && <EventsTab />}
+      {tab === "announcements" && <AnnouncementsTab />}
       {tab === "activity" && <ActivityTab />}
     </div>
   );
 }
+
+function AnnouncementsTab() {
+  const listFn = useServerFn(listPublicAnnouncements);
+  const upsertFn = useServerFn(adminUpsertAnnouncement);
+  const delFn = useServerFn(adminDeleteAnnouncement);
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["announcements"], queryFn: () => listFn() });
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  const create = useMutation({
+    mutationFn: () => upsertFn({ data: { title, body } }),
+    onSuccess: () => {
+      toast.success("Posted");
+      setTitle("");
+      setBody("");
+      qc.invalidateQueries({ queryKey: ["announcements"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const del = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["announcements"] }),
+  });
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="glass rounded-3xl p-6 space-y-3">
+        {q.data?.map((a: any) => (
+          <div key={a.id} className="rounded-2xl border border-border p-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="font-medium">{a.title}</p>
+              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{a.body}</p>
+              <p className="text-xs text-muted-foreground mt-2">{new Date(a.created_at).toLocaleString()}</p>
+            </div>
+            <button onClick={() => del.mutate(a.id)} className="p-2 rounded-lg hover:bg-red-500/10 text-red-300">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+        {q.data?.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
+      </div>
+      <div className="glass rounded-3xl p-6 h-fit sticky top-24">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-3">
+          <Megaphone className="h-3.5 w-3.5" /> New announcement
+        </div>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full rounded-xl bg-white/5 border border-border px-3 py-2 outline-none focus:border-accent text-sm mb-2" />
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5} placeholder="Message" className="w-full rounded-xl bg-white/5 border border-border px-3 py-2 outline-none focus:border-accent text-sm" />
+        <button
+          onClick={() => create.mutate()}
+          disabled={!title.trim() || !body.trim() || create.isPending}
+          className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {create.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Post
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 function ActivityTab() {
   const listFn = useServerFn(adminListSignins);
