@@ -131,6 +131,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = router.state.location.pathname;
+  const hideChrome =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/auth");
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -155,7 +159,7 @@ function RootComponent() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0,oklch(0.12_0.03_265/0.4)_100%)]" />
         </div>
 
-        <Navbar />
+        {!hideChrome && <Navbar />}
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -169,8 +173,9 @@ function RootComponent() {
           </motion.div>
         </AnimatePresence>
 
-        <Footer />
+        {!hideChrome && <Footer />}
       </div>
     </QueryClientProvider>
   );
 }
+
