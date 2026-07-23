@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          audience: string
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean
@@ -152,35 +182,47 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          banned: boolean
           city: string | null
           created_at: string
           dob: string | null
+          email: string | null
           full_name: string | null
           gender: string | null
           id: string
+          instagram: string | null
           phone: string | null
+          twitter: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          banned?: boolean
           city?: string | null
           created_at?: string
           dob?: string | null
+          email?: string | null
           full_name?: string | null
           gender?: string | null
           id: string
+          instagram?: string | null
           phone?: string | null
+          twitter?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          banned?: boolean
           city?: string | null
           created_at?: string
           dob?: string | null
+          email?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
+          instagram?: string | null
           phone?: string | null
+          twitter?: string | null
           updated_at?: string
         }
         Relationships: []
