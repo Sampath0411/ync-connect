@@ -1,10 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMe, verifyCode } from "@/lib/community.functions";
-import { ScanLine, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { ScanLine, Loader2, CheckCircle2, XCircle, Camera, CameraOff } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard/team")({
   component: TeamPanel,
