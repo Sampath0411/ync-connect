@@ -22,6 +22,9 @@ function TeamPanel() {
   const verifyFn = useServerFn(verifyCode);
   const [code, setCode] = useState("");
   const [result, setResult] = useState<any>(null);
+  const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const verify = useMutation({
     mutationFn: (c: string) => verifyFn({ data: { code: c } }),
@@ -32,6 +35,62 @@ function TeamPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const stopScan = () => {
+    setScanning(false);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  useEffect(() => {
+    if (!scanning) return;
+    let cancelled = false;
+    let raf = 0;
+    const BD = (window as any).BarcodeDetector;
+    if (!BD) {
+      toast.error("Camera scanner not supported here — paste the code instead.");
+      setScanning(false);
+      return;
+    }
+    const detector = new BD({ formats: ["qr_code"] });
+
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        const tick = async () => {
+          if (cancelled || !videoRef.current) return;
+          try {
+            const codes = await detector.detect(videoRef.current);
+            if (codes[0]?.rawValue) {
+              const val = codes[0].rawValue as string;
+              setCode(val);
+              stopScan();
+              setResult(null);
+              verify.mutate(val);
+              return;
+            }
+          } catch {}
+          raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+      } catch (err: any) {
+        toast.error(err.message ?? "Camera error");
+        setScanning(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, [scanning]);
+
   return (
     <div className="max-w-3xl">
       <div className="glass rounded-3xl p-8">
@@ -41,8 +100,29 @@ function TeamPanel() {
           </div>
           <h1 className="text-3xl font-display font-bold">Verify a member or ticket</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Paste the scanned QR code payload (or a UUID) below. Members and event tickets are both accepted.
+            Scan the QR with your camera, or paste the code below.
           </p>
+
+          <div className="mt-5">
+            {scanning ? (
+              <div className="relative rounded-2xl overflow-hidden border border-border bg-black">
+                <video ref={videoRef} playsInline muted className="w-full max-h-[360px] object-cover" />
+                <button
+                  onClick={stopScan}
+                  className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs inline-flex items-center gap-1"
+                >
+                  <CameraOff className="h-3.5 w-3.5" /> Stop
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setScanning(true)}
+                className="w-full py-3 rounded-xl border border-border bg-white/5 hover:bg-white/10 text-sm inline-flex items-center justify-center gap-2"
+              >
+                <Camera className="h-4 w-4" /> Scan with camera
+              </button>
+            )}
+          </div>
 
           <form
             onSubmit={(e) => {
@@ -67,6 +147,7 @@ function TeamPanel() {
               Verify
             </button>
           </form>
+
 
           {result && (
             <div className="mt-6 rounded-2xl border border-border p-5">
