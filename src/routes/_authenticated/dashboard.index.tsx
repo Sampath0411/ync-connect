@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "framer-motion";
+import { CardSkeleton, EventCardSkeleton } from "@/components/ui/skeleton";
 import { Download, Loader2, ScanLine, Sparkles, ArrowRight, Ticket } from "lucide-react";
+import { downloadBase64, downloadDataUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   getMe,
@@ -14,25 +16,6 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: DashboardHome,
 });
-
-function downloadBase64Pdf(base64: string, filename: string) {
-  const bin = atob(base64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-function downloadDataUrl(dataUrl: string, filename: string) {
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = filename;
-  a.click();
-}
 
 function DashboardHome() {
   const qc = useQueryClient();
@@ -71,7 +54,7 @@ function DashboardHome() {
           <Sparkles className="h-3.5 w-3.5" /> Membership
         </div>
         {!me ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <CardSkeleton />
         ) : !me.membership ? (
           <div>
             <h2 className="text-2xl font-display font-bold">You're not a member yet</h2>
@@ -119,7 +102,10 @@ function DashboardHome() {
           </Link>
         </div>
         {eventsQ.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <EventCardSkeleton />
+            <EventCardSkeleton />
+          </div>
         ) : (eventsQ.data?.length ?? 0) === 0 ? (
           <p className="text-sm text-muted-foreground">No events published yet.</p>
         ) : (
@@ -160,7 +146,7 @@ function MembershipCard({ cardFn, membership, name }: { cardFn: any; membership:
         {q.data && (
           <div className="mt-4 flex flex-wrap gap-2">
             <button
-              onClick={() => downloadBase64Pdf(q.data.pdfBase64, `ync-membership-${membership.card_code.slice(0, 8)}.pdf`)}
+              onClick={() => downloadBase64(q.data.pdfBase64, `ync-membership-${membership.card_code.slice(0, 8)}.pdf`)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-medium"
             >
               <Download className="h-4 w-4" /> PDF card

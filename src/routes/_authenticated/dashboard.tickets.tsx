@@ -2,25 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, Ticket } from "lucide-react";
+import { downloadBase64 } from "@/lib/utils";
 import { listMyTickets, getTicketDownload } from "@/lib/community.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/tickets")({
   component: MyTickets,
   head: () => ({ meta: [{ title: "My Tickets — YNC" }] }),
 });
-
-function downloadBase64Pdf(base64: string, filename: string) {
-  const bin = atob(base64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  const blob = new Blob([bytes], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function MyTickets() {
   const ticketsFn = useServerFn(listMyTickets);
@@ -37,7 +25,10 @@ function MyTickets() {
       </div>
 
       {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          Loading…
+        </div>
       ) : (q.data?.length ?? 0) === 0 ? (
         <div className="glass rounded-3xl p-10 text-center">
           <p className="text-sm text-muted-foreground">No tickets yet.</p>
@@ -74,7 +65,7 @@ function MyTickets() {
               <button
                 onClick={async () => {
                   const res = await downloadFn({ data: { ticket_id: t.id } });
-                  downloadBase64Pdf(res.pdfBase64, `ync-ticket-${t.ticket_code.slice(0, 8)}.pdf`);
+                  downloadBase64(res.pdfBase64, `ync-ticket-${t.ticket_code.slice(0, 8)}.pdf`);
                 }}
                 className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 shrink-0"
                 aria-label="Download ticket"

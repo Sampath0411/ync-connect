@@ -702,6 +702,63 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
   if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 }
 
+// ---------- Contact Messages ----------
+export const submitContactMessage = createServerFn({ method: "POST" })
+  .inputValidator((d: { name: string; email: string; subject?: string; message: string }) =>
+    z
+      .object({
+        name: z.string().min(1).max(200),
+        email: z.string().email().max(300),
+        subject: z.string().max(500).optional(),
+        message: z.string().min(1).max(5000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const s = publicClient();
+    const { error } = await s.from("contact_messages").insert({
+      name: data.name,
+      email: data.email,
+      subject: data.subject ?? null,
+      message: data.message,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminListContactMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("contact_messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const adminMarkContactRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("contact_messages")
+      .update({ read: true })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Admin: ban / unban ----------
 export const adminSetBanned = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

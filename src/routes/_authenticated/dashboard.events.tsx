@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { EventCardSkeleton, ListSkeleton } from "@/components/ui/skeleton";
 import { Calendar, Loader2, MapPin, Ticket, X, Tag, Check } from "lucide-react";
 import { toast } from "sonner";
 import { listPublicEvents, listMyTickets, bookEvent, validateCoupon } from "@/lib/community.functions";
@@ -32,7 +33,11 @@ function DashboardEvents() {
       </div>
 
       {eventsQ.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <EventCardSkeleton key={i} />
+          ))}
+        </div>
       ) : (eventsQ.data?.length ?? 0) === 0 ? (
         <div className="glass rounded-3xl p-8 text-center text-sm text-muted-foreground">
           No events published yet. Check back soon.
@@ -260,8 +265,7 @@ function BookingSheet({ event, onClose }: { event: any; onClose: () => void }) {
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            Payment gateway is not yet enabled on this project — bookings are confirmed instantly for now. Enable
-            Stripe/Paddle in the platform to charge cards.
+            Bookings are confirmed instantly. Payment integration coming soon.
           </p>
 
           <button

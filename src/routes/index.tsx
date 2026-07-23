@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowRight,
   Calendar,
@@ -19,8 +21,10 @@ import {
   MapPin,
   Camera,
   Send,
+  Loader2,
 } from "lucide-react";
-import { listPublicEvents } from "@/lib/community.functions";
+import { EventCardSkeleton } from "@/components/ui/skeleton";
+import { listPublicEvents, submitContactMessage } from "@/lib/community.functions";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -280,7 +284,11 @@ function EventsSection() {
       </motion.div>
 
       {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <div className="grid gap-5 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <EventCardSkeleton key={i} />
+          ))}
+        </div>
       ) : events.length === 0 ? (
         <div className="glass rounded-3xl p-10 text-center text-sm text-muted-foreground">
           No events published yet. Check back soon.
@@ -328,7 +336,16 @@ function EventsSection() {
 }
 
 function Gallery() {
-  const shots = Array.from({ length: 8 }).map((_, i) => `hsl(${(i * 47) % 360} 70% 55%)`);
+  const shots = [
+    "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=80",
+    "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&q=80",
+    "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&q=80",
+    "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&q=80",
+    "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&q=80",
+    "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&q=80",
+    "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&q=80",
+    "https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400&q=80",
+  ];
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <motion.div {...fadeUp} className="text-center max-w-2xl mx-auto">
@@ -340,16 +357,28 @@ function Gallery() {
         </h2>
       </motion.div>
       <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {shots.map((c, i) => (
+        {shots.map((url, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: i * 0.05 }}
-            style={{ background: `linear-gradient(135deg, ${c}, transparent)` }}
-            className={`rounded-2xl ${i % 3 === 0 ? "aspect-[3/4]" : "aspect-square"} glass overflow-hidden`}
-          />
+            className={`relative rounded-2xl ${i % 3 === 0 ? "aspect-[3/4]" : "aspect-square"} overflow-hidden group`}
+          >
+            <img
+              src={url}
+              alt={`Community moment ${i + 1}`}
+              loading="lazy"
+              onError={(e) => {
+                const target = e.currentTarget;
+                target.style.display = "none";
+                target.parentElement!.style.background = `linear-gradient(135deg, oklch(0.62 0.2 262 / 0.3), oklch(0.78 0.14 220 / 0.3))`;
+              }}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </motion.div>
         ))}
       </div>
     </div>
@@ -398,6 +427,28 @@ function Features() {
 }
 
 function Contact() {
+  const contactFn = useServerFn(submitContactMessage);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) return;
+    setSending(true);
+    try {
+      await contactFn({ data: { name, email, message } });
+      setSent(true);
+      toast.success("Message sent! We'll get back to you soon.");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="grid lg:grid-cols-2 gap-10 items-start">
@@ -414,20 +465,53 @@ function Contact() {
             <p className="flex items-center gap-3"><MapPin className="h-4 w-4 text-accent" /> Bengaluru · Mumbai · Delhi</p>
           </div>
         </motion.div>
-        <motion.form
-          {...fadeUp}
-          onSubmit={(e) => {
-            e.preventDefault();
-          }}
-          className="glass rounded-3xl p-6 space-y-3"
-        >
-          <input placeholder="Your name" className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
-          <input placeholder="Email" type="email" className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
-          <textarea placeholder="Message" rows={4} className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent" />
-          <button className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium inline-flex items-center justify-center gap-2">
-            <Send className="h-4 w-4" /> Send message
-          </button>
-        </motion.form>
+        {sent ? (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass rounded-3xl p-10 text-center">
+            <Send className="mx-auto h-10 w-10 text-accent" />
+            <p className="mt-4 font-display text-2xl font-bold">Thanks — we'll be in touch!</p>
+            <p className="mt-2 text-sm text-muted-foreground">We usually respond within 24 hours.</p>
+          </motion.div>
+        ) : (
+          <motion.form
+            {...fadeUp}
+            onSubmit={handleSubmit}
+            className="glass rounded-3xl p-6 space-y-3"
+          >
+            <input
+              name="name"
+              placeholder="Your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition"
+            />
+            <input
+              name="email"
+              placeholder="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition"
+            />
+            <textarea
+              name="message"
+              placeholder="Message"
+              rows={4}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              required
+              className="w-full rounded-xl bg-white/5 border border-border px-3.5 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition"
+            />
+            <button
+              disabled={sending}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-medium inline-flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending ? "Sending…" : "Send message"}
+            </button>
+          </motion.form>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Calendar, Download, MapPin, Loader2, Ticket as TicketIcon } from "lucide-react";
+import { downloadBase64 } from "@/lib/utils";
 import { getTicketById, getTicketDownload } from "@/lib/community.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/bookings/$id/ticket")({
@@ -40,16 +41,7 @@ function TicketPage() {
 
   const downloadPdf = () => {
     if (!dl) return;
-    const bin = atob(dl.pdfBase64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    const blob = new Blob([bytes], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ync-ticket-${t.ticket_code.slice(0, 8)}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBase64(dl.pdfBase64, `ync-ticket-${t.ticket_code.slice(0, 8)}.pdf`);
   };
 
   return (

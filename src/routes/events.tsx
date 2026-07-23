@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { PageShell, PageHeader } from "@/components/site/PageShell";
 import { MapPin, Calendar, ArrowRight, Loader2, Ticket } from "lucide-react";
+import { EventCardSkeleton } from "@/components/ui/skeleton";
 import { listPublicEvents, reserveTicket } from "@/lib/community.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -84,7 +85,11 @@ function Events() {
         </div>
 
         {q.isLoading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
           <p className="text-center text-muted-foreground py-16">No events in this view yet.</p>
         ) : (

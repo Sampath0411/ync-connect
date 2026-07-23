@@ -14,6 +14,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "../components/site/Navbar";
 import { Footer } from "../components/site/Footer";
+import { ThemeToggle } from "../components/site/ThemeToggle";
+import { CookieConsent } from "../components/site/CookieConsent";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -100,10 +102,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },      {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=Figtree:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -159,11 +160,24 @@ function RootComponent() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0,oklch(0.12_0.03_265/0.4)_100%)]" />
         </div>
 
+        {/* Skip-to-content link for keyboard users */}
+        <a href="#main-content" className="skip-to-content focus:top-0">
+          Skip to content
+        </a>
+
         {!hideChrome && <Navbar />}
+
+        {/* Theme toggle */}
+        {!hideChrome && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <ThemeToggle />
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           <motion.div
             key={pathname}
+            id="main-content"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -174,6 +188,8 @@ function RootComponent() {
         </AnimatePresence>
 
         {!hideChrome && <Footer />}
+
+        <CookieConsent />
       </div>
     </QueryClientProvider>
   );

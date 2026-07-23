@@ -18,9 +18,10 @@ import {
   adminUpsertAnnouncement,
   adminDeleteAnnouncement,
 } from "@/lib/community.functions";
-import { ShieldCheck, Check, X, Loader2, Plus, Trash2, Edit3, Activity, Megaphone, Ban, BadgeCheck } from "lucide-react";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { ShieldCheck, Check, X, Loader2, Plus, Trash2, Edit3, Activity, Megaphone, Ban, BadgeCheck, MailQuestion, MailOpen } from "lucide-react";
 import { toast } from "sonner";
-
+import { adminListContactMessages, adminMarkContactRead } from "@/lib/community.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard/admin")({
   component: AdminPanel,
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/admin")({
 });
 
 function AdminPanel() {
-  const [tab, setTab] = useState<"memberships" | "users" | "events" | "announcements" | "activity">("memberships");
+  const [tab, setTab] = useState<"memberships" | "users" | "events" | "announcements" | "activity" | "messages">("memberships");
 
   return (
     <div>
@@ -43,7 +44,7 @@ function AdminPanel() {
       <h1 className="text-3xl sm:text-4xl font-display font-bold">Manage the community</h1>
 
       <div className="glass rounded-2xl p-1.5 flex flex-wrap gap-1 w-fit mt-6 mb-6">
-        {(["memberships", "users", "events", "announcements", "activity"] as const).map((t) => (
+        {(["memberships", "users", "events", "announcements", "activity", "messages"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -61,6 +62,65 @@ function AdminPanel() {
       {tab === "events" && <EventsTab />}
       {tab === "announcements" && <AnnouncementsTab />}
       {tab === "activity" && <ActivityTab />}
+      {tab === "messages" && <MessagesTab />}
+    </div>
+  );
+}
+
+function MessagesTab() {
+  const listFn = useServerFn(adminListContactMessages);
+  const markReadFn = useServerFn(adminMarkContactRead);
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["admin-messages"], queryFn: () => listFn() });
+
+  const markRead = useMutation({
+    mutationFn: (id: string) => markReadFn({ data: { id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-messages"] }),
+  });
+
+  return (
+    <div className="glass rounded-3xl p-6">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent mb-4">
+        <MailQuestion className="h-3.5 w-3.5" /> Contact messages
+      </div>
+      {q.isLoading ? (
+        <ListSkeleton count={4} />
+      ) : (q.data?.length ?? 0) === 0 ? (
+        <p className="text-sm text-muted-foreground">No messages yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {q.data?.map((m: any) => (
+            <div
+              key={m.id}
+              className={`rounded-2xl border p-4 ${
+                m.read ? "border-border opacity-70" : "border-accent/30 bg-accent/[0.02]"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">
+                    {m.name}
+                    {!m.read && <span className="ml-2 inline-block h-2 w-2 rounded-full bg-accent" />}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{m.email}</p>
+                  {m.subject && <p className="text-sm mt-1 font-medium">{m.subject}</p>}
+                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{m.message}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{new Date(m.created_at).toLocaleString()}</p>
+                </div>
+                {!m.read && (
+                  <button
+                    onClick={() => markRead.mutate(m.id)}
+                    className="p-2 rounded-lg hover:bg-white/5 shrink-0"
+                    aria-label="Mark as read"
+                  >
+                    <MailOpen className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -134,7 +194,7 @@ function ActivityTab() {
         <Activity className="h-3.5 w-3.5" /> Recent activity
       </div>
       {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ListSkeleton count={5} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -190,7 +250,7 @@ function MembershipsTab() {
   return (
     <div className="glass rounded-3xl p-6">
       {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ListSkeleton count={4} />
       ) : (
         <div className="space-y-3">
           {q.data?.map((m: any) => (
@@ -270,7 +330,7 @@ function UsersTab() {
   return (
     <div className="glass rounded-3xl p-6">
       {q.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ListSkeleton count={5} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -389,10 +449,10 @@ function EventsTab() {
             <Plus className="h-4 w-4" /> New
           </button>
         </div>
-        {q.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : (
-          <div className="space-y-2">
+      {q.isLoading ? (
+        <ListSkeleton count={5} />
+      ) : (
+        <div className="space-y-2">
             {q.data?.map((e: any) => (
               <div key={e.id} className="rounded-2xl border border-border p-4 flex items-center justify-between gap-3">
                 <div>
@@ -411,8 +471,13 @@ function EventsTab() {
                     <Edit3 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => confirm("Delete this event?") && del.mutate(e.id)}
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to delete this event? This cannot be undone.")) {
+                        del.mutate(e.id);
+                      }
+                    }}
                     className="p-2 rounded-lg hover:bg-red-500/10 text-red-300"
+                    aria-label="Delete event"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
