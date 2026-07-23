@@ -242,15 +242,28 @@ function StatusPill({ status }: { status: string }) {
 function UsersTab() {
   const listFn = useServerFn(adminListUsers);
   const setRoleFn = useServerFn(adminSetRole);
+  const banFn = useServerFn(adminSetBanned);
+  const activateFn = useServerFn(adminActivateMembership);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin-users"], queryFn: () => listFn() });
 
   const setRole = useMutation({
     mutationFn: (v: { user_id: string; role: "admin" | "team" | "member"; grant: boolean }) =>
       setRoleFn({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const setBan = useMutation({
+    mutationFn: (v: { user_id: string; banned: boolean }) => banFn({ data: v }),
     onSuccess: () => {
+      toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const activate = useMutation({
+    mutationFn: (user_id: string) => activateFn({ data: { user_id } }),
+    onSuccess: () => toast.success("Membership activated"),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -272,7 +285,10 @@ function UsersTab() {
             <tbody>
               {q.data?.map((u: any) => (
                 <tr key={u.id} className="border-b border-border/50">
-                  <td className="py-3 pr-4">{u.full_name ?? "—"}</td>
+                  <td className="py-3 pr-4">
+                    {u.full_name ?? "—"}
+                    {u.banned && <span className="ml-2 text-xs text-red-300">(banned)</span>}
+                  </td>
                   <td className="py-3 pr-4 text-muted-foreground">{u.city ?? "—"}</td>
                   <td className="py-3 pr-4">
                     <div className="flex flex-wrap gap-1">
@@ -301,6 +317,22 @@ function UsersTab() {
                           </button>
                         );
                       })}
+                      <button
+                        onClick={() => activate.mutate(u.id)}
+                        className="text-xs px-2.5 py-1 rounded-lg border bg-green-500/10 border-green-500/20 text-green-300 inline-flex items-center gap-1"
+                      >
+                        <BadgeCheck className="h-3 w-3" /> Activate member
+                      </button>
+                      <button
+                        onClick={() => setBan.mutate({ user_id: u.id, banned: !u.banned })}
+                        className={`text-xs px-2.5 py-1 rounded-lg border inline-flex items-center gap-1 ${
+                          u.banned
+                            ? "bg-white/5 border-border hover:bg-white/10"
+                            : "bg-red-500/10 border-red-500/20 text-red-300"
+                        }`}
+                      >
+                        <Ban className="h-3 w-3" /> {u.banned ? "Unban" : "Ban"}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -312,6 +344,7 @@ function UsersTab() {
     </div>
   );
 }
+
 
 function EventsTab() {
   const listFn = useServerFn(adminListEvents);
